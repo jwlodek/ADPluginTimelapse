@@ -37,7 +37,28 @@ using namespace cv;
 // Name your plugin
 static const char *pluginName="NDPluginTimelapse";
 
+asynStatus NDPluginTimelapse::writeOctet(asynUser* pasynUser, const char *value, size_t nChars, size_t *nActual)
+{
+    printf("Inside writeOctet\n");
+	const char* functionName = "writeOctet";
+	int function = pasynUser->reason;
+	asynStatus status = asynSuccess;
+	printf("Inside writeOctet\n");
 
+	status = setStringParam(function, value);
+	asynPrint(this->pasynUserSelf, ASYN_TRACEIO_DRIVER, "%s::%s function = %d value=%d\n", pluginName, functionName, function, value);
+	printf("Error after status\n");
+    // replace PLUGINNAME with your plugin (ex. BAR)
+	if(function < ND_TIMELAPSE_FIRST_PARAM){
+		status = NDPluginDriver::writeOctet(pasynUser, value, nChars, nActual);
+	}
+	printf("Right before the callBack\n");
+	callParamCallbacks();
+	if(status){
+		asynPrint(this->pasynUserSelf, ASYN_TRACE_ERROR, "%s::%s Error writing Octet val to PV\n", pluginName, functionName);
+	}
+	return status;
+}
 
 /**
  * Override of NDPluginDriver function. Must be implemented by your plugin
@@ -46,14 +67,14 @@ static const char *pluginName="NDPluginTimelapse";
  * @params[in]: value		-> value PV was set to
  * @return: success if PV was updated correctly, otherwise error
  */
+
+
 asynStatus NDPluginTimelapse::writeInt32(asynUser* pasynUser, epicsInt32 value){
 	const char* functionName = "writeInt32";
 	int function = pasynUser->reason;
 	asynStatus status = asynSuccess;
 	int checkStatus;
 	getIntegerParam(NDPluginTimelapseTlRecord, &checkStatus);
-
-	printf("test\n");
 	if(checkStatus == 1 && value == 1)
 	{
 		//nothing happens
@@ -62,23 +83,18 @@ asynStatus NDPluginTimelapse::writeInt32(asynUser* pasynUser, epicsInt32 value){
 	{
 		//start recording
 		//setIntegerParam(NDPluginTimelapseTlRecord, 1);
-		printf("Hello World\n");
 	}
 	else if(checkStatus == 1 && value ==0)
 	{
 		//end recording
 		//setIntegerParam(NDPluginTimelapseTlRecord, 0);
 	}
-
-	printf("Error before status\n");
 	status = setIntegerParam(function, value);
 	asynPrint(this->pasynUserSelf, ASYN_TRACEIO_DRIVER, "%s::%s function = %d value=%d\n", pluginName, functionName, function, value);
-	printf("Error after status\n");
     // replace PLUGINNAME with your plugin (ex. BAR)
 	if(function < ND_TIMELAPSE_FIRST_PARAM){
 		status = NDPluginDriver::writeInt32(pasynUser, value);
 	}
-	printf("Right before the callBack\n");
 	callParamCallbacks();
 	if(status){
 		asynPrint(this->pasynUserSelf, ASYN_TRACE_ERROR, "%s::%s Error writing Int32 val to PV\n", pluginName, functionName);
@@ -96,14 +112,11 @@ asynStatus NDPluginTimelapse::writeInt32(asynUser* pasynUser, epicsInt32 value){
 */
 void NDPluginTimelapse::processCallbacks(NDArray *pArray){
 	static const char* functionName = "processCallbacks";
-	printf("Error before pSratch\n");
 	NDArray *pScratch;
 	asynStatus status = asynSuccess;
 	NDArrayInfo arrayInfo;
-	printf("Error here?\n");
 	//call base class and get information about frame
 	NDPluginDriver::beginProcessCallbacks(pArray);
-
 	// convert to Mat
 	pArray->getInfo(&arrayInfo);
 
@@ -115,10 +128,8 @@ void NDPluginTimelapse::processCallbacks(NDArray *pArray){
     // DO NOT CALL pArray.release()
 	// If used, call pScratch.release()
     // use doCallbacksGenericPointer with pScratch to pass processed image to plugin array port
-	printf("Error before getting Integer Param\n");
 	int checkStatus;
 	getIntegerParam(NDPluginTimelapseTlRecord, &checkStatus);
-	printf("Error before the first if statement\n");
 	VideoCapture cap(0);
 	if(checkStatus == 0)
 	{
@@ -140,7 +151,6 @@ void NDPluginTimelapse::processCallbacks(NDArray *pArray){
 	{
 
 	}
-
 
 	if(cap.isOpened() == true) 
 	{
@@ -169,12 +179,13 @@ NDPluginTimelapse::NDPluginTimelapse(const char *portName, int queueSize, int bl
 		int priority, int stackSize)
 		/* Invoke the base class constructor */
 		: NDPluginDriver(portName, queueSize, blockingCallbacks,
-		NDArrayPort, NDArrayAddr, 1, maxBuffers, maxMemory,
-		asynInt32ArrayMask | asynFloat64ArrayMask | asynGenericPointerMask,
-		asynInt32ArrayMask | asynFloat64ArrayMask | asynGenericPointerMask,
-		ASYN_MULTIDEVICE, 1, priority, stackSize, 1)
+        NDArrayPort, NDArrayAddr, 1, maxBuffers, maxMemory,
+        asynInt32ArrayMask | asynFloat64ArrayMask | asynGenericPointerMask,
+        asynInt32ArrayMask | asynFloat64ArrayMask | asynGenericPointerMask,
+        ASYN_MULTIDEVICE, 1, priority, stackSize, 1)
 {
-createParam(NDPluginTimelapseTlRecordString, asynParamInt32, &NDPluginTimelapseTlRecord);
+	createParam(NDPluginTimelapseTlFilenameString, 	asynParamOctet, 	&NDPluginTimelapseTlFilename);
+	createParam(NDPluginTimelapseTlRecordString, 	asynParamInt32, 	&NDPluginTimelapseTlRecord);
 
 	char versionString[25];
 	

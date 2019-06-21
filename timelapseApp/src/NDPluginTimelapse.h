@@ -23,7 +23,8 @@ using namespace std;
 #define TIMELAPSE_MODIFICATION 	0
 
 
-#define NDPluginTimelapseTlRecordString "TL_RECORD" //asynParamInt32
+#define NDPluginTimelapseTlFilenameString 		"TL_FILENAME" 	//asynParamOctet
+#define NDPluginTimelapseTlRecordString 		"TL_RECORD" 	//asynParamInt32
 
 
 
@@ -44,8 +45,9 @@ class NDPluginTimelapse : public NDPluginDriver {
 		//~NDPlugin___();
 
 		void processCallbacks(NDArray *pArray);
-
+		
 		virtual asynStatus writeInt32(asynUser* pasynUser, epicsInt32 value);
+		virtual asynStatus writeOctet(asynUser* pasynUser, const char *value, size_t nChars, size_t *nActual);
 
 	protected:
 
@@ -54,7 +56,9 @@ class NDPluginTimelapse : public NDPluginDriver {
 		//Place PV indexes here, define first and last as appropriate, replace PLUGINNAME with name, 
 int NDPluginTimelapseTlRecord;
 #define ND_TIMELAPSE_FIRST_PARAM NDPluginTimelapseTlRecord
-		#define ND_TIMELAPSE_LAST_PARAM LASTPVINDEX
+
+int NDPluginTimelapseTlFilename;
+#define ND_TIMELAPSE_LAST_PARAM NDPluginTimelapseTlFilename
 
 	private:
 
