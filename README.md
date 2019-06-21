@@ -2,7 +2,7 @@
 
 An areaDetector plugin for creating timelapse videos using OpenCV's video library
 
-Author: Michael Posada
+Author: Michael Posada  
 Secondary Authors: Jakub Wlodek, Kazimierz Gofron
 
 
