@@ -46,13 +46,19 @@ asynStatus NDPluginTimelapse::writeOctet(asynUser* pasynUser, const char *value,
 	printf("Inside writeOctet\n");
 
 	status = setStringParam(function, value);
+
+    String check;
+    //getStringParam(NDPluginTimelapseTlFilename, &check);
+
+    //printf(check+"\n");
+
 	asynPrint(this->pasynUserSelf, ASYN_TRACEIO_DRIVER, "%s::%s function = %d value=%d\n", pluginName, functionName, function, value);
-	printf("Error after status\n");
+	printf("Error after status inside Octet\n");
     // replace PLUGINNAME with your plugin (ex. BAR)
 	if(function < ND_TIMELAPSE_FIRST_PARAM){
 		status = NDPluginDriver::writeOctet(pasynUser, value, nChars, nActual);
 	}
-	printf("Right before the callBack\n");
+	printf("Right before the callBack, inside Octet\n");
 	callParamCallbacks();
 	if(status){
 		asynPrint(this->pasynUserSelf, ASYN_TRACE_ERROR, "%s::%s Error writing Octet val to PV\n", pluginName, functionName);
@@ -130,28 +136,30 @@ void NDPluginTimelapse::processCallbacks(NDArray *pArray){
     // use doCallbacksGenericPointer with pScratch to pass processed image to plugin array port
 	int checkStatus;
 	getIntegerParam(NDPluginTimelapseTlRecord, &checkStatus);
-	VideoCapture cap(0);
-	if(checkStatus == 0)
-	{
-		printf("Recording is off!\n");
-		VideoCapture cap(0);
-		cap.release();
+	//VideoCapture cap(0);
+	//if(checkStatus == 0)
+	//{
+		//printf("Recording is off!\n");
+		//VideoCapture cap(0);
+		//cap.release();
 		//end the recording call the library and stuff
-	}
-	else if (checkStatus == 1)
-	{
-		printf("Recording on!\n");
+	
+    //}
+	//else if (checkStatus == 1)
+	//{
+	//	printf("Recording on!\n");
 		///start the recording call
 		
 		//Note to self we can add the file path name to save the reording somewhere
 		//when asking them for the information on
 		
-	}
-	else
-	{
+	//}
+	//else
+	//{
 
-	}
+	//}
 
+    /*
 	if(cap.isOpened() == true) 
 	{
 		printf("On!\n");
@@ -160,6 +168,7 @@ void NDPluginTimelapse::processCallbacks(NDArray *pArray){
 	{
 		printf("Off!\n");
 	}
+    */
 	this->lock();
 
 	if(status == asynError){

@@ -8,6 +8,3 @@ dbd
 envPaths
 O.linux-x86_64/
 .vscode/
-scripts/
-helperscripts/
-TemplateReadme.md
