@@ -35,6 +35,7 @@
 
 // include your external dependency libraries here
 #include <opencv2/opencv.hpp>
+#include<opencv2/highgui/highgui.hpp>
 
 //some basic namespaces
 using namespace std;
@@ -121,6 +122,7 @@ asynStatus NDPluginTimelapse::writeInt32(asynUser* pasynUser, epicsInt32 value) 
 void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 	static const char* functionName = "processCallbacks";
 	NDArray* pScratch;
+	int camId;
 	asynStatus status = asynSuccess;
 	NDArrayInfo arrayInfo;
 	//call base class and get information about frame
@@ -156,18 +158,59 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 	if (path != NULL)
 	{
 		fclose(path);
-		//I want to call a thread to set up the recording process of the camera
-		//recording();
-		//thread first(recording);
-		//first.detach();
-		//first.join();
+
 		printf("Valid Pathing, we are good to record!\n");
 
-		VideoCapture cap(finalPath);
-		cap.open(finalPath);
+		VideoCapture inputVideo(0);//input from camera!
+
+		//Output here 
+		int fourcc;
+		fourcc = VideoWriter::fourcc('M', 'J', 'P', 'G');
+		double fps = 5;
+		//Size frameSize = Size ((int) inputVideo.get(CV_CAP_PROP_FRAME_WIDTH), (int) inputVideo.get(CV_CAP_PROP_FRAME_HEIGHT));
+		Size frameSize = Size(arrayInfo.xSize, arrayInfo.ySize);
+		bool isColor = true;
+
+		VideoWriter cap(finalPath, fourcc, fps, frameSize, isColor); //opencv_ffmpeg.dll
 
 
+		if (cap.isOpened() == true)
+		{
+			printf("It worked\n");
 
+			Mat src, res;
+			vector<Mat> spl;
+
+			int channel = 2;
+			unsigned char l;
+
+
+			for (;;) //Show the image captured in the window and repeat
+			{
+				printf("Do I break after imdecode?");
+				memcpy(&l, pArray->pData, arrayInfo.totalBytes);
+				imdecode(l, 2, &src);
+				printf("Do I break after imdecode?");
+				//inputVideo >> src;             // read
+				if (src.empty()) break;         // check if at end
+
+				split(src, spl);                // process - extract only the correct channel
+				for (int i = 0; i < 3; ++i)
+				{
+					if (i != channel)
+						printf("In the for loop\n");
+
+					spl[i] = Mat(frameSize, spl[0].type());
+				}
+				merge(spl, res);
+
+				//outputVideo.write(res); //save or
+				cap << res;
+			}
+			printf("Empty?");
+
+
+		}
 	}
 	else {
 		printf("Not valid");
