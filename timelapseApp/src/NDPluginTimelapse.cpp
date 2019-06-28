@@ -178,14 +178,18 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 	}
 
-	strcpy(pathing, copy.c_str());
+	//strcpy(pathing,copy.c_str());
 
 
 	FILE* path = fopen(pathing, "w");
 
+
+
 	if (path != NULL)
 	{
 		fclose(path);
+		remove(pathing);
+
 
 
 
@@ -373,3 +377,4 @@ extern "C" void NDTimelapseRegister(void) {
 extern "C" {
 	epicsExportRegistrar(NDTimelapseRegister);
 }
+
