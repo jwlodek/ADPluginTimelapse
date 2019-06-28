@@ -145,6 +145,7 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 	char pathing[256];
 
 	(asynStatus)getStringParam(NDPluginTimelapseTlFilename, sizeof(pathing), pathing);
+	printf("%s\n", pathing);
 
 	std::string finalPath = pathing;
 
@@ -153,15 +154,45 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 	// change the if statement to do without filesystem
 	struct stat buffer;
 
-	FILE* path = fopen(pathing, "wb");
+	int checker = 0;
+	string copy = finalPath;
+	string ff;
+	//printf(finalPath);
+	for (int i = 0; i < finalPath.length(); ++i)
+	{
+		if (finalPath[i] == '\\')
+		{
+			checker = i;
+		}
+	}
+	if (copy != "")
+	{
+		int f = copy.size();
+
+		ff = copy.substr(checker + 1); // my file name
+		f = f - ff.size();
+
+		size_t start_pos = copy.find(ff);
+		copy.replace(start_pos, ff.length(), "");
+
+
+	}
+
+	strcpy(pathing, copy.c_str());
+
+
+	FILE* path = fopen(pathing, "w");
 
 	if (path != NULL)
 	{
 		fclose(path);
 
+
+
+
 		printf("Valid Pathing, we are good to record!\n");
 
-		VideoCapture inputVideo(0);//input from camera!
+		//VideoCapture inputVideo(0);//input from camera!
 
 		//Output here 
 		int fourcc;
@@ -180,40 +211,46 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 			Mat src, res;
 			vector<Mat> spl;
-
+			//unsigned char l [(int)arrayInfo.totalBytes];
+			void* l = malloc(arrayInfo.totalBytes);
 			int channel = 2;
-			unsigned char l;
-
 
 			for (;;) //Show the image captured in the window and repeat
 			{
-				printf("Do I break after imdecode?");
-				memcpy(&l, pArray->pData, arrayInfo.totalBytes);
-				imdecode(l, 2, &src);
-				printf("Do I break after imdecode?");
-				//inputVideo >> src;             // read
+
+				Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8U, l);
+				src = temp.clone();// Not empty
+				temp.release();
+
+
 				if (src.empty()) break;         // check if at end
 
 				split(src, spl);                // process - extract only the correct channel
 				for (int i = 0; i < 3; ++i)
 				{
 					if (i != channel)
+					{
 						printf("In the for loop\n");
 
-					spl[i] = Mat(frameSize, spl[0].type());
-				}
-				merge(spl, res);
+						spl[i] = Mat(frameSize, spl[0].type());
+						printf("Does the work\n");
+					}
 
-				//outputVideo.write(res); //save or
-				cap << res;
+				}
+				printf("I am about to merge!\n");
+				merge(spl, res);
+				printf("I break after merge\n");
+				cap.write(res); //save or
+				printf("I write!\n");
+				//cap << res;
 			}
-			printf("Empty?");
+			printf("Empty?\n");
 
 
 		}
 	}
 	else {
-		printf("Not valid");
+		printf("Not valid\n");
 	}
 
 
@@ -226,6 +263,7 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 	callParamCallbacks();
 }
+
 
 //A seprate thread for video recording
 
