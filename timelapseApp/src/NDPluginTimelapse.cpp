@@ -188,7 +188,7 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 	if (path != NULL)
 	{
 		fclose(path);
-		remove(pathing);
+		cout << remove(pathing) << "\n";
 
 
 
@@ -200,7 +200,7 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 		//Output here 
 		int fourcc;
-		fourcc = VideoWriter::fourcc('M', 'J', 'P', 'G');
+		fourcc = VideoWriter::fourcc('D', 'I', 'V', 'X');
 		double fps = 5;
 		//Size frameSize = Size ((int) inputVideo.get(CV_CAP_PROP_FRAME_WIDTH), (int) inputVideo.get(CV_CAP_PROP_FRAME_HEIGHT));
 		Size frameSize = Size(arrayInfo.xSize, arrayInfo.ySize);
@@ -234,19 +234,55 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 				{
 					if (i != channel)
 					{
-						printf("In the for loop\n");
+						try
+						{
 
-						spl[i] = Mat(frameSize, spl[0].type());
-						printf("Does the work\n");
+
+							printf("In the for loop\n");
+
+							spl[i] = Mat(frameSize, spl[0].type()); // breaks here sometimes
+
+							printf("Does the work\n");
+						}
+						catch (cv::Exception& e)
+						{
+							const char* err_msg = e.what();
+							std::cout << "exception caught within the inner for loop: " << err_msg << std::endl;
+						}
+						catch (Mat spl)
+						{
+							printf("Error with spl");
+						}
+						catch (...)
+						{
+							printf("Error happened\n");
+						}
 					}
 
 				}
-				printf("I am about to merge!\n");
-				merge(spl, res);
-				printf("I break after merge\n");
-				cap.write(res); //save or
-				printf("I write!\n");
-				//cap << res;
+				try
+				{
+					printf("I am about to merge!\n");
+					merge(spl, res); //breaks here sometimes
+					printf("I break after merge\n");
+					//cap.write(res); //save or breaks sometimes here
+					printf("I write!\n");
+					cap << res;
+					//break;
+				}
+				catch (cv::Exception& e)
+				{
+					const char* err_msg = e.what();
+					std::cout << "exception caught caught in the outer most for loop: " << err_msg << std::endl;
+				}
+				catch (Mat spl)
+				{
+					printf("Error with SPL");
+				}
+				catch (...)
+				{
+					printf("Error happened\n");
+				}
 			}
 			printf("Empty?\n");
 
@@ -377,4 +413,3 @@ extern "C" void NDTimelapseRegister(void) {
 extern "C" {
 	epicsExportRegistrar(NDTimelapseRegister);
 }
-
