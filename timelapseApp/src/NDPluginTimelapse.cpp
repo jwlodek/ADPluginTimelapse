@@ -152,21 +152,21 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 	std::cout << finalPath << "\n";
 	// change the if statement to do without filesystem
-	struct stat buffer;
 
+	/*
 	int checker = 0;
 	string copy = finalPath;
 	string ff;
-	//printf(finalPath);
-	for (int i = 0; i < finalPath.length(); ++i)
+		//printf(finalPath);
+	for(int i = 0; i < finalPath.length(); ++i)
 	{
-		if (finalPath[i] == '\\')
+		if(finalPath[i] == '\\')
 		{
 			checker = i;
 		}
 	}
-	if (copy != "")
-	{
+		if(copy != "")
+		{
 		int f = copy.size();
 
 		ff = copy.substr(checker + 1); // my file name
@@ -176,9 +176,9 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 		copy.replace(start_pos, ff.length(), "");
 
 
-	}
-
-	//strcpy(pathing,copy.c_str());
+		}
+		*/
+		//strcpy(pathing,copy.c_str());
 
 
 	FILE* path = fopen(pathing, "w");
@@ -196,7 +196,7 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 		printf("Valid Pathing, we are good to record!\n");
 
-		//VideoCapture inputVideo(0);//input from camera!
+		//	VideoCapture inputVideo(0);//input from camera!
 
 		//Output here 
 		int fourcc;
@@ -216,31 +216,33 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 			Mat src, res;
 			vector<Mat> spl;
 			//unsigned char l [(int)arrayInfo.totalBytes];
-			void* l = malloc(arrayInfo.totalBytes);
-			int channel = 2;
+			//void* l = malloc(arrayInfo.totalBytes);
+			int channel = 0;
 
 			for (;;) //Show the image captured in the window and repeat
 			{
 
-				Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8U, l);
+				Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8U, pArray->pData);
 				src = temp.clone();// Not empty
 				temp.release();
 
 
 				if (src.empty()) break;         // check if at end
-
+				//cout << src << "\n";
 				split(src, spl);                // process - extract only the correct channel
+				src.release();
+				//cout << spl[0] << "\n";
 				for (int i = 0; i < 3; ++i)
 				{
 					if (i != channel)
 					{
 						try
 						{
-
+							//	cout << arrayInfo.colorMode << "\n";
 
 							printf("In the for loop\n");
-
-							spl[i] = Mat(frameSize, spl[0].type()); // breaks here sometimes
+							cout << frameSize << "\n";
+							spl[i] = Mat(frameSize, spl[0].type()); // breaks here sometimes Pretty Sure that this where the error starts
 
 							printf("Does the work\n");
 						}
@@ -265,9 +267,11 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 					printf("I am about to merge!\n");
 					merge(spl, res); //breaks here sometimes
 					printf("I break after merge\n");
-					//cap.write(res); //save or breaks sometimes here
+					cap.write(res); //save or breaks sometimes here
 					printf("I write!\n");
-					cap << res;
+					//cout << res << "\n";
+					//cap << res;
+					res.release();
 					//break;
 				}
 				catch (cv::Exception& e)
