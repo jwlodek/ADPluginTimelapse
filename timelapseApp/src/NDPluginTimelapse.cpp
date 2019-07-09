@@ -188,23 +188,32 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 	if (path != NULL)
 	{
 		fclose(path);
+
+		/*
+		Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8UC3, pArray->pData);
+		Mat src = temp.clone();
+		imshow("Test", src);
+		waitKey(0);
+		temp.release();
+		src.release();
+		setIntegerParam(NDPluginDriverEnableCallbacks, 0);
+		*/
+
 		cout << remove(pathing) << "\n";
-
-
-
-
 
 		printf("Valid Pathing, we are good to record!\n");
 
-		//	VideoCapture inputVideo(0);//input from camera!
+		VideoCapture inputVideo;//input from camera!
 
-		//Output here 
+	//Output here 
 		int fourcc;
-		fourcc = VideoWriter::fourcc('D', 'I', 'V', 'X');
-		double fps = 5;
+		fourcc = VideoWriter::fourcc('M', 'J', 'P', 'G');
+		double fps = 25.0;
 		//Size frameSize = Size ((int) inputVideo.get(CV_CAP_PROP_FRAME_WIDTH), (int) inputVideo.get(CV_CAP_PROP_FRAME_HEIGHT));
 		Size frameSize = Size(arrayInfo.xSize, arrayInfo.ySize);
+
 		bool isColor = true;
+
 
 		VideoWriter cap(finalPath, fourcc, fps, frameSize, isColor); //opencv_ffmpeg.dll
 
@@ -222,17 +231,27 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 			for (;;) //Show the image captured in the window and repeat
 			{
 
-				Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8U, pArray->pData);
+				Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8UC3, pArray->pData);
+
 				src = temp.clone();// Not empty
 				temp.release();
 
 
-				if (src.empty()) break;         // check if at end
+				if (src.empty())
+				{
+					printf("Empty we can not do anything\n");
+
+					break;         // check if at end
+				}
+
+
+
 				//cout << src << "\n";
-				split(src, spl);                // process - extract only the correct channel
-				src.release();
+				//split(src, spl);                // process - extract only the correct channel
+				//src.release();
 				//cout << spl[0] << "\n";
-				for (int i = 0; i < 3; ++i)
+				/*
+				for (int i =0; i < 3; ++i)
 				{
 					if (i != channel)
 					{
@@ -246,31 +265,35 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 							printf("Does the work\n");
 						}
-						catch (cv::Exception& e)
+						catch( cv::Exception& e )
 						{
 							const char* err_msg = e.what();
 							std::cout << "exception caught within the inner for loop: " << err_msg << std::endl;
 						}
-						catch (Mat spl)
+						catch(Mat spl)
 						{
 							printf("Error with spl");
 						}
-						catch (...)
+						catch(...)
 						{
 							printf("Error happened\n");
 						}
 					}
 
 				}
+				*/
 				try
 				{
 					printf("I am about to merge!\n");
-					merge(spl, res); //breaks here sometimes
+					//merge(spl, res); //breaks here sometimes
 					printf("I break after merge\n");
-					cap.write(res); //save or breaks sometimes here
+
+					cap.write(src); //save or breaks sometimes here
+
 					printf("I write!\n");
 					//cout << res << "\n";
-					//cap << res;
+					//cap << src;
+					src.release();
 					res.release();
 					//break;
 				}
@@ -289,9 +312,8 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 				}
 			}
 			printf("Empty?\n");
-
-
 		}
+
 	}
 	else {
 		printf("Not valid\n");
@@ -417,3 +439,4 @@ extern "C" void NDTimelapseRegister(void) {
 extern "C" {
 	epicsExportRegistrar(NDTimelapseRegister);
 }
+
