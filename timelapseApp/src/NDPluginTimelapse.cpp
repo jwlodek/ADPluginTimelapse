@@ -41,6 +41,27 @@ using namespace cv;
 // Name your plugin
 static const char* pluginName = "NDPluginTimelapse";
 
+
+asynStatus NDPluginTimelapse::writeFloat64(asynUser* pasynUser, epicsFloat64 value)
+{
+	const char* functionName = "writeFloat64";
+	int function = pasynUser->reason;
+	asynStatus status = asynSuccess;
+
+	status = setStringParam(function, value);
+
+
+	if (function < ND_TIMELAPSE_FIRST_PARAM) {
+		status = NDPluginDriver::writeFloat64(pasynUser, value);
+	}
+	printf("Right before the callBack, inside WriteFloat64\n");
+	callParamCallbacks();
+	if (status) {
+		asynPrint(this->pasynUserSelf, ASYN_TRACE_ERROR, "%s::%s Error writing Float64 val to PV\n", pluginName, functionName);
+	}
+	return status;
+}
+
 asynStatus NDPluginTimelapse::writeOctet(asynUser* pasynUser, const char* value, size_t nChars, size_t* nActual)
 {
 	printf("Inside writeOctet\n");
