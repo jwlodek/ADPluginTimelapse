@@ -30,6 +30,7 @@ using namespace cv;
 #define TIMELAPSE_MODIFICATION 	0
 
 
+#define NDPluginTimelapseTlFPSString "TL_FPS" //asynParamFloat64
 #define NDPluginTimelapseTlFilenameString 		"TL_FILENAME" 	//asynParamOctet
 #define NDPluginTimelapseTlRecordString 		"TL_RECORD" 	//asynParamInt32
 
@@ -65,7 +66,8 @@ protected:
 #define ND_TIMELAPSE_FIRST_PARAM NDPluginTimelapseTlRecord
 
 	int NDPluginTimelapseTlFilename;
-#define ND_TIMELAPSE_LAST_PARAM NDPluginTimelapseTlFilename
+	int NDPluginTimelapseTlFPS;
+#define ND_TIMELAPSE_LAST_PARAM NDPluginTimelapseTlFPS
 
 private:
 

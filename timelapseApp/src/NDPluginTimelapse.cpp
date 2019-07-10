@@ -257,6 +257,7 @@ NDPluginTimelapse::NDPluginTimelapse(const char* portName, int queueSize, int bl
 		asynInt32ArrayMask | asynFloat64ArrayMask | asynGenericPointerMask,
 		ASYN_MULTIDEVICE, 1, priority, stackSize, 1)
 {
+	createParam(NDPluginTimelapseTlFPSString, asynParamFloat64, &NDPluginTimelapseTlFPS);
 	createParam(NDPluginTimelapseTlFilenameString, asynParamOctet, &NDPluginTimelapseTlFilename);
 	createParam(NDPluginTimelapseTlRecordString, asynParamInt32, &NDPluginTimelapseTlRecord);
 
