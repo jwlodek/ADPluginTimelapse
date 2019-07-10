@@ -72,6 +72,7 @@ private:
 	// init all global variables here
 	VideoWriter cap;
 	bool onORoff;
+	bool valid;
 	// init all plugin additional functions here
 
 };

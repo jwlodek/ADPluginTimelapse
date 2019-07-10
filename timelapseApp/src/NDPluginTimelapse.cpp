@@ -52,6 +52,29 @@ asynStatus NDPluginTimelapse::writeOctet(asynUser* pasynUser, const char* value,
 	status = setStringParam(function, value);
 
 	asynPrint(this->pasynUserSelf, ASYN_TRACEIO_DRIVER, "%s::%s function = %d value=%d\n", pluginName, functionName, function, value);
+
+	char pathing[256];
+
+	(asynStatus)getStringParam(NDPluginTimelapseTlFilename, sizeof(pathing), pathing);
+	printf("%s\n", pathing);
+	std::string finalPath = pathing;
+
+	FILE* path = fopen(pathing, "w");
+
+	if (path != NULL)
+	{
+		fclose(path);
+		remove(pathing);
+		valid = true;
+		printf("File pathing is good\n");
+	}
+	else
+	{
+		valid = false;
+		printf("Check file pathing not valid\n");
+		//bad
+	}
+
 	printf("Error after status inside Octet\n");
 	// replace PLUGINNAME with your plugin (ex. BAR)
 	if (function < ND_TIMELAPSE_FIRST_PARAM) {
@@ -86,12 +109,14 @@ asynStatus NDPluginTimelapse::writeInt32(asynUser* pasynUser, epicsInt32 value) 
 
 	if (checkStatus == 0)
 	{
-		//start stops
+		//stops
 		cap.release();
 		onORoff = false;
+		printf("We stopped recording\n");
 	}
-	else
+	else if (checkStatus == 1)
 	{
+		//starts
 		onORoff = true;
 	}
 
@@ -136,71 +161,14 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 	// If used, call pScratch.release()
 	// use doCallbacksGenericPointer with pScratch to pass processed image to plugin array port
 
-
-
-
-
-	//std::cout << finalPath  << "\n";
-	// change the if statement to do without filesystem
-
-	/*
-	int checker = 0;
-	string copy = finalPath;
-	string ff;
-		//printf(finalPath);
-	for(int i = 0; i < finalPath.length(); ++i)
-	{
-		if(finalPath[i] == '\\')
-		{
-			checker = i;
-		}
-	}
-		if(copy != "")
-		{
-		int f = copy.size();
-
-		ff = copy.substr(checker + 1); // my file name
-		f = f - ff.size();
-
-		size_t start_pos = copy.find(ff);
-		copy.replace(start_pos, ff.length(), "");
-
-
-		}
-		*/
-		//strcpy(pathing,copy.c_str());
-
-
-	//FILE * path = fopen(pathing, "w");
-
-
-
-	///if(path != NULL)
-	//{
-	   //fclose(path);
-
-		/*
-		Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8UC3, pArray->pData);
-		Mat src = temp.clone();
-		imshow("Test", src);
-		waitKey(0);
-		temp.release();
-		src.release();
-		setIntegerParam(NDPluginDriverEnableCallbacks, 0);
-		*/
-
-		//cout << remove(pathing) << "\n";
-
-	printf("Valid Pathing, we are good to record!\n");
-
 	char pathing[256];
 
 	(asynStatus)getStringParam(NDPluginTimelapseTlFilename, sizeof(pathing), pathing);
-	printf("%s\n", pathing);
-
 	std::string finalPath = pathing;
 
-	if (onORoff == true)
+
+
+	if (onORoff == true && valid == true)
 	{
 		int fourcc;
 		fourcc = VideoWriter::fourcc('M', 'J', 'P', 'G');
@@ -210,6 +178,7 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 		bool isColor = true;
 		cap.open(finalPath, fourcc, fps, frameSize, isColor);
 		onORoff = false;
+		printf("We are recording!\n");
 	}
 
 	if (cap.isOpened() == true)
@@ -218,13 +187,6 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 		Mat src;
 		vector<Mat> spl;
-		//unsigned char l [(int)arrayInfo.totalBytes];
-		//void* l = malloc(arrayInfo.totalBytes);
-		int channel = 0;
-
-		//for(;;) //Show the image captured in the window and repeat
-		//{
-
 		Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8UC3, pArray->pData);
 
 		src = temp.clone();// Not empty
@@ -236,40 +198,24 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 			printf("Empty we can not do anything\n");
 
 		}
-
-
 		try
 		{
-
-
 			cap.write(src); //save or breaks sometimes here
 
 			printf("I wrote!\n");
 			src.release();
-			//cap.release();
-			//break;
+
 		}
 		catch (cv::Exception& e)
 		{
 			const char* err_msg = e.what();
 			std::cout << "exception caught caught in the outer most for loop: " << err_msg << std::endl;
 		}
-		catch (Mat spl)
-		{
-			printf("Error with SPL");
-		}
 		catch (...)
 		{
 			printf("Error happened\n");
 		}
-		//}
 	}
-
-	//}
-	//else{
-		//printf("Not valid\n");
-	//}
-
 
 	this->lock();
 
