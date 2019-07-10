@@ -1,21 +1,28 @@
 /**
- * Template header file fo NDPlugins
- * 
- * 
- * Author: 
- * Created on: 
- * 
+ * Template header file for NDPluginTimelapse
+ *
+ *
+ * Author:
+ * Created on:
+ *
  */
 
 #ifndef NDPluginTimelapseH
 #define NDPluginTimelapseH
 
-//Define necessary includes here
+ //Define necessary includes here
 
-using namespace std;
+
+ // include your external dependency libraries here
+#include <opencv2/opencv.hpp>
+#include<opencv2/highgui/highgui.hpp>
 
 //include base plugin driver
 #include "NDPluginDriver.h"
+
+
+using namespace std;
+using namespace cv;
 
 //version numbers
 #define TIMELAPSE_VERSION      	0
@@ -37,34 +44,35 @@ using namespace std;
 
 /* Plugin class, extends plugin driver */
 class NDPluginTimelapse : public NDPluginDriver {
-	public:
-		NDPluginTimelapse(const char *portName, int queueSize, int blockingCallbacks,
-			const char* NDArrayPort, int NDArrayAddr, int maxBuffers,
-			size_t maxMemory, int priority, int stackSize);
+public:
+	NDPluginTimelapse(const char* portName, int queueSize, int blockingCallbacks,
+		const char* NDArrayPort, int NDArrayAddr, int maxBuffers,
+		size_t maxMemory, int priority, int stackSize);
 
-		//~NDPlugin___();
+	//~NDPlugin___();
 
-		void processCallbacks(NDArray *pArray);
-		
-		virtual asynStatus writeInt32(asynUser* pasynUser, epicsInt32 value);
-		virtual asynStatus writeOctet(asynUser* pasynUser, const char *value, size_t nChars, size_t *nActual);
+	void processCallbacks(NDArray* pArray);
 
-	protected:
+	virtual asynStatus writeInt32(asynUser* pasynUser, epicsInt32 value);
+	virtual asynStatus writeOctet(asynUser* pasynUser, const char* value, size_t nChars, size_t* nActual);
+	virtual void recording();
+protected:
 
-		//in this section i define the coords of database vals
+	//in this section i define the coords of database vals
 
-		//Place PV indexes here, define first and last as appropriate, replace PLUGINNAME with name, 
-int NDPluginTimelapseTlRecord;
+	//Place PV indexes here, define first and last as appropriate, replace PLUGINNAME with name, 
+	int NDPluginTimelapseTlRecord;
 #define ND_TIMELAPSE_FIRST_PARAM NDPluginTimelapseTlRecord
 
-int NDPluginTimelapseTlFilename;
+	int NDPluginTimelapseTlFilename;
 #define ND_TIMELAPSE_LAST_PARAM NDPluginTimelapseTlFilename
 
-	private:
+private:
 
-        // init all global variables here
-
-        // init all plugin additional functions here
+	// init all global variables here
+	VideoWriter cap;
+	bool onORoff;
+	// init all plugin additional functions here
 
 };
 

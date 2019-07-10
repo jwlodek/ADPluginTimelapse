@@ -33,9 +33,6 @@
 #include "NDPluginTimelapse.h"
 #include <epicsExport.h>
 
-// include your external dependency libraries here
-#include <opencv2/opencv.hpp>
-#include<opencv2/highgui/highgui.hpp>
 
 //some basic namespaces
 using namespace std;
@@ -53,7 +50,6 @@ asynStatus NDPluginTimelapse::writeOctet(asynUser* pasynUser, const char* value,
 	printf("Inside writeOctet\n");
 
 	status = setStringParam(function, value);
-
 
 	asynPrint(this->pasynUserSelf, ASYN_TRACEIO_DRIVER, "%s::%s function = %d value=%d\n", pluginName, functionName, function, value);
 	printf("Error after status inside Octet\n");
@@ -83,21 +79,22 @@ asynStatus NDPluginTimelapse::writeInt32(asynUser* pasynUser, epicsInt32 value) 
 	int function = pasynUser->reason;
 	asynStatus status = asynSuccess;
 	int checkStatus;
+	setIntegerParam(NDPluginTimelapseTlRecord, value);
 	getIntegerParam(NDPluginTimelapseTlRecord, &checkStatus);
-	if (checkStatus == 1 && value == 1)
+
+
+
+	if (checkStatus == 0)
 	{
-		//nothing happens
+		//start stops
+		cap.release();
+		onORoff = false;
 	}
-	else if (checkStatus == 0 && value == 1)
+	else
 	{
-		//start recording
-		//setIntegerParam(NDPluginTimelapseTlRecord, 1);
+		onORoff = true;
 	}
-	else if (checkStatus == 1 && value == 0)
-	{
-		//end recording
-		//setIntegerParam(NDPluginTimelapseTlRecord, 0);
-	}
+
 	status = setIntegerParam(function, value);
 	asynPrint(this->pasynUserSelf, ASYN_TRACEIO_DRIVER, "%s::%s function = %d value=%d\n", pluginName, functionName, function, value);
 	// replace PLUGINNAME with your plugin (ex. BAR)
@@ -138,19 +135,12 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 	// DO NOT CALL pArray.release()
 	// If used, call pScratch.release()
 	// use doCallbacksGenericPointer with pScratch to pass processed image to plugin array port
-	int checkStatus;
-
-	getIntegerParam(NDPluginTimelapseTlRecord, &checkStatus);
-
-	char pathing[256];
-
-	(asynStatus)getStringParam(NDPluginTimelapseTlFilename, sizeof(pathing), pathing);
-	printf("%s\n", pathing);
-
-	std::string finalPath = pathing;
 
 
-	std::cout << finalPath << "\n";
+
+
+
+	//std::cout << finalPath  << "\n";
 	// change the if statement to do without filesystem
 
 	/*
@@ -181,13 +171,13 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 		//strcpy(pathing,copy.c_str());
 
 
-	FILE* path = fopen(pathing, "w");
+	//FILE * path = fopen(pathing, "w");
 
 
 
-	if (path != NULL)
-	{
-		fclose(path);
+	///if(path != NULL)
+	//{
+	   //fclose(path);
 
 		/*
 		Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8UC3, pArray->pData);
@@ -199,125 +189,86 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 		setIntegerParam(NDPluginDriverEnableCallbacks, 0);
 		*/
 
-		cout << remove(pathing) << "\n";
+		//cout << remove(pathing) << "\n";
 
-		printf("Valid Pathing, we are good to record!\n");
+	printf("Valid Pathing, we are good to record!\n");
 
-		VideoCapture inputVideo;//input from camera!
+	char pathing[256];
 
-	//Output here 
+	(asynStatus)getStringParam(NDPluginTimelapseTlFilename, sizeof(pathing), pathing);
+	printf("%s\n", pathing);
+
+	std::string finalPath = pathing;
+
+	if (onORoff == true)
+	{
 		int fourcc;
 		fourcc = VideoWriter::fourcc('M', 'J', 'P', 'G');
-		double fps = 25.0;
-		//Size frameSize = Size ((int) inputVideo.get(CV_CAP_PROP_FRAME_WIDTH), (int) inputVideo.get(CV_CAP_PROP_FRAME_HEIGHT));
+		double fps = 20.0;
 		Size frameSize = Size(arrayInfo.xSize, arrayInfo.ySize);
 
 		bool isColor = true;
+		cap.open(finalPath, fourcc, fps, frameSize, isColor);
+		onORoff = false;
+	}
+
+	if (cap.isOpened() == true)
+	{
+		printf("It worked\n");
+
+		Mat src;
+		vector<Mat> spl;
+		//unsigned char l [(int)arrayInfo.totalBytes];
+		//void* l = malloc(arrayInfo.totalBytes);
+		int channel = 0;
+
+		//for(;;) //Show the image captured in the window and repeat
+		//{
+
+		Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8UC3, pArray->pData);
+
+		src = temp.clone();// Not empty
+		temp.release();
 
 
-		VideoWriter cap(finalPath, fourcc, fps, frameSize, isColor); //opencv_ffmpeg.dll
-
-
-		if (cap.isOpened() == true)
+		if (src.empty())
 		{
-			printf("It worked\n");
+			printf("Empty we can not do anything\n");
 
-			Mat src, res;
-			vector<Mat> spl;
-			//unsigned char l [(int)arrayInfo.totalBytes];
-			//void* l = malloc(arrayInfo.totalBytes);
-			int channel = 0;
-
-			for (;;) //Show the image captured in the window and repeat
-			{
-
-				Mat temp = Mat(arrayInfo.xSize, arrayInfo.ySize, CV_8UC3, pArray->pData);
-
-				src = temp.clone();// Not empty
-				temp.release();
-
-
-				if (src.empty())
-				{
-					printf("Empty we can not do anything\n");
-
-					break;         // check if at end
-				}
-
-
-
-				//cout << src << "\n";
-				//split(src, spl);                // process - extract only the correct channel
-				//src.release();
-				//cout << spl[0] << "\n";
-				/*
-				for (int i =0; i < 3; ++i)
-				{
-					if (i != channel)
-					{
-						try
-						{
-							//	cout << arrayInfo.colorMode << "\n";
-
-							printf("In the for loop\n");
-							cout << frameSize << "\n";
-							spl[i] = Mat(frameSize, spl[0].type()); // breaks here sometimes Pretty Sure that this where the error starts
-
-							printf("Does the work\n");
-						}
-						catch( cv::Exception& e )
-						{
-							const char* err_msg = e.what();
-							std::cout << "exception caught within the inner for loop: " << err_msg << std::endl;
-						}
-						catch(Mat spl)
-						{
-							printf("Error with spl");
-						}
-						catch(...)
-						{
-							printf("Error happened\n");
-						}
-					}
-
-				}
-				*/
-				try
-				{
-					printf("I am about to merge!\n");
-					//merge(spl, res); //breaks here sometimes
-					printf("I break after merge\n");
-
-					cap.write(src); //save or breaks sometimes here
-
-					printf("I write!\n");
-					//cout << res << "\n";
-					//cap << src;
-					src.release();
-					res.release();
-					//break;
-				}
-				catch (cv::Exception& e)
-				{
-					const char* err_msg = e.what();
-					std::cout << "exception caught caught in the outer most for loop: " << err_msg << std::endl;
-				}
-				catch (Mat spl)
-				{
-					printf("Error with SPL");
-				}
-				catch (...)
-				{
-					printf("Error happened\n");
-				}
-			}
-			printf("Empty?\n");
 		}
 
+
+		try
+		{
+
+
+			cap.write(src); //save or breaks sometimes here
+
+			printf("I wrote!\n");
+			src.release();
+			//cap.release();
+			//break;
+		}
+		catch (cv::Exception& e)
+		{
+			const char* err_msg = e.what();
+			std::cout << "exception caught caught in the outer most for loop: " << err_msg << std::endl;
+		}
+		catch (Mat spl)
+		{
+			printf("Error with SPL");
+		}
+		catch (...)
+		{
+			printf("Error happened\n");
+		}
+		//}
 	}
-	else {
-		printf("Not valid\n");
-	}
+
+	//}
+	//else{
+		//printf("Not valid\n");
+	//}
 
 
 	this->lock();
