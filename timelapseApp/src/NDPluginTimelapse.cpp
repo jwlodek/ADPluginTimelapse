@@ -48,7 +48,7 @@ asynStatus NDPluginTimelapse::writeFloat64(asynUser* pasynUser, epicsFloat64 val
 	int function = pasynUser->reason;
 	asynStatus status = asynSuccess;
 
-	status = setStringParam(function, value);
+	
 
 
 	if (function < ND_TIMELAPSE_FIRST_PARAM) {
