@@ -47,10 +47,20 @@ asynStatus NDPluginTimelapse::writeFloat64(asynUser* pasynUser, epicsFloat64 val
 	const char* functionName = "writeFloat64";
 	int function = pasynUser->reason;
 	asynStatus status = asynSuccess;
+	double fps;
+	//setDoubleParam(NDPluginTimelapseTlFPS, (double) value);
+	getDoubleParam(NDPluginTimelapseTlFPS, &fps);
 
-	
+	if (fps > 0.0)
+	{
+		setFPS = true;
+	}
+	else
+	{
+		setFPS = false;
+	}
 
-
+	status = setDoubleParam(function, value);
 	if (function < ND_TIMELAPSE_FIRST_PARAM) {
 		status = NDPluginDriver::writeFloat64(pasynUser, value);
 	}
@@ -88,6 +98,7 @@ asynStatus NDPluginTimelapse::writeOctet(asynUser* pasynUser, const char* value,
 		remove(pathing);
 		valid = true;
 		printf("File pathing is good\n");
+		//good
 	}
 	else
 	{
@@ -123,7 +134,7 @@ asynStatus NDPluginTimelapse::writeInt32(asynUser* pasynUser, epicsInt32 value) 
 	int function = pasynUser->reason;
 	asynStatus status = asynSuccess;
 	int checkStatus;
-	setIntegerParam(NDPluginTimelapseTlRecord, value);
+	//setIntegerParam(NDPluginTimelapseTlRecord, value);
 	getIntegerParam(NDPluginTimelapseTlRecord, &checkStatus);
 
 
@@ -189,18 +200,21 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 
 
-	if (onORoff == true && valid == true)
+	if (onORoff == true && valid == true && setFPS == true)
 	{
 		int fourcc;
 		fourcc = VideoWriter::fourcc('M', 'J', 'P', 'G');
-		double fps = 20.0;
+		double fps;
+		getDoubleParam(NDPluginTimelapseTlFPS, &fps);
 		Size frameSize = Size(arrayInfo.xSize, arrayInfo.ySize);
 
 		bool isColor = true;
 		cap.open(finalPath, fourcc, fps, frameSize, isColor);
 		onORoff = false;
 		printf("We are recording!\n");
+		cout << fps << "\n";
 	}
+
 
 	if (cap.isOpened() == true)
 	{
