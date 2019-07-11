@@ -137,6 +137,29 @@ asynStatus NDPluginTimelapse::writeInt32(asynUser* pasynUser, epicsInt32 value) 
 	//setIntegerParam(NDPluginTimelapseTlRecord, value);
 	getIntegerParam(NDPluginTimelapseTlRecord, &checkStatus);
 
+	int num;
+	getIntegerParam(NDPluginTimelapseTlFileExtension, &num);
+
+	if (num == 0)
+	{
+		printf("In here\n");
+		fileExtension = ".avi";
+		fileExtenstionSet = true;
+	}
+	else if (num == 1)
+	{
+		fileExtension = ".mv";
+		fileExtenstionSet = true;
+	}
+	else if (num == 2)
+	{
+		fileExtension = ".mjpg";
+		fileExtenstionSet = true;
+	}
+	else
+	{
+		fileExtenstionSet = false;
+	}
 
 
 	if (checkStatus == 0)
@@ -200,14 +223,21 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 
 
-	if (onORoff == true && valid == true && setFPS == true)
+
+
+	if (onORoff == true && valid == true && setFPS == true && fileExtenstionSet == true)
 	{
+		int index = finalPath.find(".");
+
+		int len = finalPath.length();
+		int remain = len - index;
+		finalPath.replace(index, remain, fileExtension);
+		cout << finalPath << "\n";
 		int fourcc;
 		fourcc = VideoWriter::fourcc('M', 'J', 'P', 'G');
 		double fps;
 		getDoubleParam(NDPluginTimelapseTlFPS, &fps);
 		Size frameSize = Size(arrayInfo.xSize, arrayInfo.ySize);
-
 		bool isColor = true;
 		cap.open(finalPath, fourcc, fps, frameSize, isColor);
 		onORoff = false;
@@ -292,6 +322,7 @@ NDPluginTimelapse::NDPluginTimelapse(const char* portName, int queueSize, int bl
 		asynInt32ArrayMask | asynFloat64ArrayMask | asynGenericPointerMask,
 		ASYN_MULTIDEVICE, 1, priority, stackSize, 1)
 {
+	createParam(NDPluginTimelapseTlFileExtensionString, asynParamInt32, &NDPluginTimelapseTlFileExtension);
 	createParam(NDPluginTimelapseTlFPSString, asynParamFloat64, &NDPluginTimelapseTlFPS);
 	createParam(NDPluginTimelapseTlFilenameString, asynParamOctet, &NDPluginTimelapseTlFilename);
 	createParam(NDPluginTimelapseTlRecordString, asynParamInt32, &NDPluginTimelapseTlRecord);
@@ -372,4 +403,3 @@ extern "C" void NDTimelapseRegister(void) {
 extern "C" {
 	epicsExportRegistrar(NDTimelapseRegister);
 }
-

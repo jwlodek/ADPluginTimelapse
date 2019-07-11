@@ -30,6 +30,9 @@ using namespace cv;
 #define TIMELAPSE_MODIFICATION 	0
 
 
+#define NDPluginTimelapseTlFileExtensionString "Tl_FileExtension" //asynParamInt32
+
+
 #define NDPluginTimelapseTlFPSString "TL_FPS" //asynParamFloat64
 #define NDPluginTimelapseTlFilenameString 		"TL_FILENAME" 	//asynParamOctet
 #define NDPluginTimelapseTlRecordString 		"TL_RECORD" 	//asynParamInt32
@@ -68,7 +71,8 @@ protected:
 
 	int NDPluginTimelapseTlFilename;
 	int NDPluginTimelapseTlFPS;
-#define ND_TIMELAPSE_LAST_PARAM NDPluginTimelapseTlFPS
+	int NDPluginTimelapseTlFileExtension;
+#define ND_TIMELAPSE_LAST_PARAM NDPluginTimelapseTlFileExtension
 
 private:
 
@@ -76,6 +80,9 @@ private:
 	VideoWriter cap;
 	bool onORoff;
 	bool valid;
+	bool setFPS;
+	string fileExtension;
+	bool fileExtenstionSet;
 	// init all plugin additional functions here
 
 };
