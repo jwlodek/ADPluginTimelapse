@@ -41,30 +41,41 @@ using namespace cv;
 // Name your plugin
 static const char* pluginName = "NDPluginTimelapse";
 
-
+/**
+ * Override of NDPluginDriver function. Must be implemented by your plugin
+ *
+ * @params[in]: pasynUser	-> pointer to asyn User that initiated the transaction
+ * @params[in]: value		-> value PV was set to
+ * @return: success if PV was updated correctly, otherwise error
+ */
 asynStatus NDPluginTimelapse::writeFloat64(asynUser* pasynUser, epicsFloat64 value)
 {
 	const char* functionName = "writeFloat64";
 	int function = pasynUser->reason;
 	asynStatus status = asynSuccess;
+
+	status = setDoubleParam(function, value);
+
 	double fps;
-	//setDoubleParam(NDPluginTimelapseTlFPS, (double) value);
 	getDoubleParam(NDPluginTimelapseTlFPS, &fps);
 
-	if (fps > 0.0)
+
+
+	if (fps > 0)
 	{
+		printf("FPS is set\n");
 		setFPS = true;
 	}
 	else
 	{
+		printf("fps was lower than 0\n");
 		setFPS = false;
 	}
 
-	status = setDoubleParam(function, value);
+
 	if (function < ND_TIMELAPSE_FIRST_PARAM) {
 		status = NDPluginDriver::writeFloat64(pasynUser, value);
 	}
-	printf("Right before the callBack, inside WriteFloat64\n");
 	callParamCallbacks();
 	if (status) {
 		asynPrint(this->pasynUserSelf, ASYN_TRACE_ERROR, "%s::%s Error writing Float64 val to PV\n", pluginName, functionName);
@@ -72,13 +83,21 @@ asynStatus NDPluginTimelapse::writeFloat64(asynUser* pasynUser, epicsFloat64 val
 	return status;
 }
 
+/**
+ * Override of NDPluginDriver function. Must be implemented by your plugin
+ *
+ * @params[in]: pasynUser	-> pointer to asyn User that initiated the transaction
+ * @params[in]: value		-> value PV was set to
+ * @params[in]: nChars		-> nChars the size max we can have
+ * @params[in]: nActual		-> nActual is the acutal size of value
+ * @return: success if PV was updated correctly, otherwise error
+ */
+
 asynStatus NDPluginTimelapse::writeOctet(asynUser* pasynUser, const char* value, size_t nChars, size_t* nActual)
 {
-	printf("Inside writeOctet\n");
 	const char* functionName = "writeOctet";
 	int function = pasynUser->reason;
 	asynStatus status = asynSuccess;
-	printf("Inside writeOctet\n");
 
 	status = setStringParam(function, value);
 
@@ -87,7 +106,6 @@ asynStatus NDPluginTimelapse::writeOctet(asynUser* pasynUser, const char* value,
 	char pathing[256];
 
 	(asynStatus)getStringParam(NDPluginTimelapseTlFilename, sizeof(pathing), pathing);
-	printf("%s\n", pathing);
 	std::string finalPath = pathing;
 
 	FILE* path = fopen(pathing, "w");
@@ -107,12 +125,10 @@ asynStatus NDPluginTimelapse::writeOctet(asynUser* pasynUser, const char* value,
 		//bad
 	}
 
-	printf("Error after status inside Octet\n");
 	// replace PLUGINNAME with your plugin (ex. BAR)
 	if (function < ND_TIMELAPSE_FIRST_PARAM) {
 		status = NDPluginDriver::writeOctet(pasynUser, value, nChars, nActual);
 	}
-	printf("Right before the callBack, inside Octet\n");
 	callParamCallbacks();
 	if (status) {
 		asynPrint(this->pasynUserSelf, ASYN_TRACE_ERROR, "%s::%s Error writing Octet val to PV\n", pluginName, functionName);
@@ -134,48 +150,66 @@ asynStatus NDPluginTimelapse::writeInt32(asynUser* pasynUser, epicsInt32 value) 
 	int function = pasynUser->reason;
 	asynStatus status = asynSuccess;
 	int checkStatus;
-	//setIntegerParam(NDPluginTimelapseTlRecord, value);
-	getIntegerParam(NDPluginTimelapseTlRecord, &checkStatus);
-
+	status = setIntegerParam(function, value);
 	int num;
 	getIntegerParam(NDPluginTimelapseTlFileExtension, &num);
 
 	if (num == 0)
 	{
-		printf("In here\n");
+		printf("File Extension set\n");
 		fileExtension = ".avi";
 		fileExtenstionSet = true;
 	}
 	else if (num == 1)
 	{
+		printf("File Extension set\n");
 		fileExtension = ".mv";
 		fileExtenstionSet = true;
 	}
 	else if (num == 2)
 	{
+		printf("File Extension set\n");
 		fileExtension = ".mjpg";
+		fileExtenstionSet = true;
+	}
+	else if (num == 3)
+	{
+		printf("File Extension set\n");
+		fileExtension = ".h264";
+		fileExtenstionSet = true;
+	}
+	else if (num == 4)
+	{
+		printf("File Extension set\n");
+		fileExtension = ".mp4";
 		fileExtenstionSet = true;
 	}
 	else
 	{
+		printf("File Extension not set\n");
 		fileExtenstionSet = false;
 	}
 
+
+	getIntegerParam(NDPluginTimelapseTlRecord, &checkStatus);
 
 	if (checkStatus == 0)
 	{
 		//stops
 		cap.release();
 		onORoff = false;
+		record = false;
 		printf("We stopped recording\n");
 	}
 	else if (checkStatus == 1)
 	{
 		//starts
 		onORoff = true;
+		record = false;
+		printf("We started to record\n");
 	}
 
-	status = setIntegerParam(function, value);
+
 	asynPrint(this->pasynUserSelf, ASYN_TRACEIO_DRIVER, "%s::%s function = %d value=%d\n", pluginName, functionName, function, value);
 	// replace PLUGINNAME with your plugin (ex. BAR)
 	if (function < ND_TIMELAPSE_FIRST_PARAM) {
@@ -220,10 +254,6 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 
 	(asynStatus)getStringParam(NDPluginTimelapseTlFilename, sizeof(pathing), pathing);
 	std::string finalPath = pathing;
-
-
-
-
 
 	if (onORoff == true && valid == true && setFPS == true && fileExtenstionSet == true)
 	{
@@ -290,24 +320,6 @@ void NDPluginTimelapse::processCallbacks(NDArray* pArray) {
 	}
 
 	callParamCallbacks();
-}
-
-
-//A seprate thread for video recording
-
-void NDPluginTimelapse::recording()
-{
-	char pathing;
-	string finalPath;
-	int addrs = 0;
-
-	(asynStatus)getStringParam(addrs, NDPluginTimelapseTlFilename, &pathing); //Not allowed to do this
-
-	finalPath = pathing + "";
-	VideoCapture cap(finalPath);
-
-
-
 }
 
 //constructror from base class, replace with your plugin name

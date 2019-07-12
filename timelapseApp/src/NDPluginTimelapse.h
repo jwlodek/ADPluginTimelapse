@@ -60,7 +60,6 @@ public:
 	virtual asynStatus writeInt32(asynUser* pasynUser, epicsInt32 value);
 	virtual asynStatus writeOctet(asynUser* pasynUser, const char* value, size_t nChars, size_t* nActual);
 	virtual asynStatus writeFloat64(asynUser* pasynUser, epicsFloat64 value);
-	virtual void recording();
 protected:
 
 	//in this section i define the coords of database vals
@@ -83,6 +82,7 @@ private:
 	bool setFPS;
 	string fileExtension;
 	bool fileExtenstionSet;
+	bool record = false;
 	// init all plugin additional functions here
 
 };
